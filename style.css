@@ -11,11 +11,44 @@ body {
   color: #333;
   display: flex;
   justify-content: center;
+  min-height: 100vh;
+  min-width: 100vw;
+  width: 100vw;
+  height: 100vh;
+  background-image: url("back.jpg");
+  background-size: 115% auto; /* Slight zoom-in */
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  overflow-x: hidden;
+  /* Remove or reduce overlays for clarity */
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  /* Make overlay fully transparent for a clear background */
+  background: transparent;
+  pointer-events: none;
 }
 
 .page-wrapper {
   width: 90%;
   max-width: 900px;
+  animation: fadeInPage 1.2s ease;
+}
+
+@keyframes fadeInPage {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* header */
@@ -64,6 +97,9 @@ body {
   border: 2px solid #000;
   border-radius: 8px;
   padding: 26px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 24px 0 #eabfff22;
+  backdrop-filter: blur(2px);
 }
 
 .chatbox h2 {
@@ -88,6 +124,16 @@ body {
   padding: 40px;
   color: #666;
   font-size: 18px;
+  animation: fadeInPlaceholder 0.8s;
+}
+
+@keyframes fadeInPlaceholder {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* input row */
@@ -124,6 +170,7 @@ body {
   justify-content: center;
   cursor: pointer;
   transition: background 0.3s;
+  box-shadow: 0 2px 8px 0 rgba(234, 191, 255, 0.1);
 }
 
 .chat-form button:hover {
@@ -186,6 +233,24 @@ body {
   display: flex;
   gap: 15px;
   min-height: 160px;
+  transition: box-shadow 0.3s cubic-bezier(0.4, 2, 0.6, 1), border-color 0.3s,
+    background 0.3s;
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.product-card:hover {
+  box-shadow: 0 8px 24px 0 rgba(0, 120, 215, 0.1),
+    0 2px 8px 0 rgba(0, 0, 0, 0.06);
+  border-color: #eabfff;
+  background: #f8f0fa;
+}
+
+.product-card.selected {
+  border: 2px solid #eabfff;
+  background: #f8f0fa;
+  box-shadow: 0 0 0 3px #eabfff55;
+  transition: box-shadow 0.4s, border-color 0.4s, background 0.4s;
 }
 
 .product-card img {
@@ -193,6 +258,24 @@ body {
   height: 110px;
   object-fit: contain;
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(120deg, #fff 60%, #eabfff 100%);
+  border-radius: 8px;
+  transition: box-shadow 0.3s;
+  box-shadow: 0 2px 8px 0 #eabfff22;
+  animation: shimmerIn 1.2s;
+}
+
+@keyframes shimmerIn {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
 }
 
 .product-card .product-info {
@@ -201,6 +284,7 @@ body {
   flex-direction: column;
   justify-content: center;
   min-height: 110px;
+  text-align: right;
 }
 
 .product-card h3 {
@@ -213,12 +297,33 @@ body {
   color: #666;
 }
 
-/* selected products */
+.product-info .desc-toggle-btn {
+  margin-top: 8px;
+  margin-bottom: 6px;
+  padding: 4px 10px;
+  font-size: 14px;
+  background: #0078d7;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s, box-shadow 0.3s;
+  box-shadow: 0 2px 8px 0 rgba(234, 191, 255, 0.1);
+}
+
+.product-info .desc-toggle-btn:hover {
+  background: linear-gradient(90deg, #b8c6ff 0%, #eabfff 100%);
+  color: #222;
+}
+
 .selected-products {
   margin: 40px 0;
   padding: 20px;
   border: 2px solid #000;
   border-radius: 8px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 24px 0 #eabfff22;
+  backdrop-filter: blur(2px);
 }
 
 .selected-products h2 {
@@ -243,13 +348,423 @@ body {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: background 0.3s, box-shadow 0.3s;
+  box-shadow: 0 2px 8px 0 rgba(234, 191, 255, 0.1);
 }
 
 .generate-btn:hover {
-  background: #666;
+  background: linear-gradient(90deg, #eabfff 0%, #b8c6ff 100%);
+  color: #222;
+  box-shadow: 0 4px 16px 0 #eabfff55;
 }
 
 .generate-btn i {
   margin-right: 8px;
+}
+
+.product-card.selected {
+  border: 2px solid #eabfff;
+  background: #f8f0fa;
+  box-shadow: 0 0 0 3px #eabfff55;
+}
+
+.selected-product-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  animation: fadeInSelected 0.6s;
+  transition: background 0.3s, border 0.3s;
+}
+
+@keyframes fadeInSelected {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.selected-product-item img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.remove-selected-btn {
+  background: none;
+  border: none;
+  color: #c00;
+  font-size: 18px;
+  cursor: pointer;
+  margin-left: 6px;
+  padding: 2px 4px;
+}
+
+.remove-selected-btn:hover {
+  color: #fff;
+  background: #c00;
+  border-radius: 50%;
+}
+
+/* RTL support: Add a class to the body for RTL mode */
+body.rtl {
+  direction: rtl;
+}
+
+/* Flip layout for RTL */
+body.rtl .page-wrapper {
+  text-align: right;
+}
+
+body.rtl .search-section,
+body.rtl .chat-form {
+  flex-direction: row-reverse;
+}
+
+body.rtl .product-card .product-info {
+  text-align: right;
+}
+
+body.rtl .selected-product-item {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+body.rtl .selected-product-item img {
+  margin-left: 8px;
+  margin-right: 0;
+}
+
+body.rtl .remove-selected-btn {
+  margin-right: 6px;
+  margin-left: 0;
+}
+
+body.rtl .chat-window,
+body.rtl .ai-response,
+body.rtl .user-question {
+  text-align: right;
+}
+
+/* Beauty Theme: Soft fade-in for page content */
+.page-wrapper {
+  width: 90%;
+  max-width: 900px;
+  animation: fadeInPage 1.2s ease;
+}
+
+@keyframes fadeInPage {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Beauty Theme: Elegant card hover and selection transitions */
+.product-card {
+  transition: box-shadow 0.3s cubic-bezier(0.4, 2, 0.6, 1), border-color 0.3s,
+    background 0.3s;
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.product-card:hover {
+  box-shadow: 0 8px 24px 0 rgba(0, 120, 215, 0.1),
+    0 2px 8px 0 rgba(0, 0, 0, 0.06);
+  border-color: #eabfff;
+  background: #f8f0fa;
+}
+
+.product-card.selected {
+  border: 2px solid #eabfff;
+  background: #f8f0fa;
+  box-shadow: 0 0 0 3px #eabfff55;
+  transition: box-shadow 0.4s, border-color 0.4s, background 0.4s;
+}
+
+/* Beauty Theme: Animate selected products in */
+.selected-product-item {
+  animation: fadeInSelected 0.6s;
+  transition: background 0.3s, border 0.3s;
+}
+
+@keyframes fadeInSelected {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Beauty Theme: Button glow and transitions */
+.generate-btn,
+.desc-toggle-btn,
+#clearAllBtn {
+  transition: background 0.3s, box-shadow 0.3s;
+  box-shadow: 0 2px 8px 0 rgba(234, 191, 255, 0.1);
+}
+
+.generate-btn:hover,
+#clearAllBtn:hover {
+  background: linear-gradient(90deg, #eabfff 0%, #b8c6ff 100%);
+  color: #222;
+  box-shadow: 0 4px 16px 0 #eabfff55;
+}
+
+.desc-toggle-btn:hover {
+  background: linear-gradient(90deg, #b8c6ff 0%, #eabfff 100%);
+  color: #222;
+}
+
+/* Beauty Theme: Chat window fade-in for responses */
+.ai-response,
+.user-question {
+  animation: fadeInChat 0.7s;
+}
+
+@keyframes fadeInChat {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Beauty Theme: Soft focus ring for inputs and buttons */
+.chat-form input:focus,
+.chat-form button:focus,
+.desc-toggle-btn:focus,
+.generate-btn:focus {
+  outline: 2px solid #eabfff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px #eabfff55;
+}
+
+/* Beauty Theme: Subtle shimmer on product images */
+.product-card img {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(120deg, #fff 60%, #eabfff 100%);
+  border-radius: 8px;
+  transition: box-shadow 0.3s;
+  box-shadow: 0 2px 8px 0 #eabfff22;
+  animation: shimmerIn 1.2s;
+}
+
+@keyframes shimmerIn {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+/* Beauty Theme: Soft glass effect for chat and selected products */
+.chatbox,
+.selected-products {
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 24px 0 #eabfff22;
+  backdrop-filter: blur(2px);
+  transition: background 0.3s;
+}
+
+/* --- Beauty Theme: Creative Transitions & Animations --- */
+
+/* Soft overlay for better contrast with background image */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  /* Make overlay fully transparent for a clear background */
+  background: transparent;
+  pointer-events: none;
+}
+
+/* Fade-in for all main sections */
+.page-wrapper,
+.site-header,
+.search-section,
+.products-grid,
+.selected-products,
+.chatbox,
+.site-footer {
+  animation: fadeInSoft 1.2s both;
+}
+
+@keyframes fadeInSoft {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Product card: gentle scale and shadow on hover */
+.product-card {
+  transition: box-shadow 0.4s cubic-bezier(0.4, 2, 0.6, 1), border-color 0.3s,
+    background 0.3s, transform 0.3s;
+  will-change: transform, box-shadow;
+}
+
+.product-card:hover {
+  transform: scale(1.035);
+  box-shadow: 0 12px 32px 0 rgba(234, 191, 255, 0.18),
+    0 2px 8px 0 rgba(0, 0, 0, 0.08);
+  border-color: #eabfff;
+  background: rgba(248, 240, 250, 0.95);
+}
+
+/* Selected card: glowing border animation */
+.product-card.selected {
+  animation: borderGlow 1.2s infinite alternate;
+}
+
+@keyframes borderGlow {
+  from {
+    box-shadow: 0 0 0 3px #eabfff55;
+  }
+  to {
+    box-shadow: 0 0 12px 6px #eabfff44;
+  }
+}
+
+/* Button: gentle pulse on hover */
+.generate-btn:hover,
+#clearAllBtn:hover,
+.desc_toggle_btn:hover {
+  animation: pulseBtn 0.7s;
+}
+
+@keyframes pulseBtn {
+  0% {
+    box-shadow: 0 0 0 0 #eabfff55;
+  }
+  70% {
+    box-shadow: 0 0 0 10px #eabfff22;
+  }
+  100% {
+    box-shadow: 0 0 0 0 #eabfff55;
+  }
+}
+
+/* Chat window: fade-in for each message */
+.ai-response,
+.user-question {
+  animation: fadeInChat 0.7s;
+}
+
+@keyframes fadeInChat {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Selected products: soft slide-in */
+.selected-product-item {
+  animation: slideInSelected 0.7s;
+}
+
+@keyframes slideInSelected {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Inputs: soft focus ring */
+.chat-form input:focus,
+.chat-form button:focus,
+.desc-toggle-btn:focus,
+.generate-btn:focus {
+  outline: 2px solid #eabfff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px #eabfff55;
+  background: rgba(234, 191, 255, 0.08);
+}
+
+/* Product image: shimmer effect */
+.product-card img {
+  animation: shimmerIn 1.2s;
+  background: linear-gradient(120deg, #fff 60%, #eabfff 100%);
+}
+
+@keyframes shimmerIn {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+/* Glass effect for main panels */
+.chatbox,
+.selected-products {
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 24px 0 #eabfff22;
+  backdrop-filter: blur(3px);
+  transition: background 0.3s;
+}
+
+/* Placeholder message: fade-in */
+.placeholder-message {
+  animation: fadeInPlaceholder 0.8s;
+}
+
+@keyframes fadeInPlaceholder {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Ensure all transitions are soft and pastel, never harsh or high-contrast */
+body,
+.page-wrapper,
+.products-grid,
+.selected-products,
+.chatbox,
+.product-card,
+.generate-btn,
+.desc-toggle-btn,
+#clearAllBtn {
+  transition: background 0.3s, box-shadow 0.3s, border-color 0.3s, color 0.3s;
 }
