@@ -51,10 +51,35 @@
         </button>
       </div>
 
+      <!-- Visual Diagnostics Section -->
+      <div
+        class="visual-diagnostics"
+        style="margin: 32px auto 0 auto; text-align: center"
+      >
+        <label for="selfieUpload" class="attach-label">
+          <span class="attach-icon"><i class="fa fa-paperclip"></i></span>
+          <span class="attach-text"
+            >Attach a selfie for personalized skin analysis</span
+          >
+        </label>
+        <input
+          type="file"
+          id="selfieUpload"
+          accept="image/*"
+          style="margin-bottom: 16px"
+        />
+        <div id="selfiePreview" style="margin-top: 10px"></div>
+      </div>
+
       <!------- Chat Area ------->
       <section class="chatbox">
         <h2>Let's Build Your Routine</h2>
-        <div id="chatWindow" class="chat-window"></div>
+        <div
+          id="chatWindow"
+          class="chat-window"
+          aria-live="polite"
+          aria-atomic="false"
+        ></div>
 
         <form id="chatForm" class="chat-form">
           <label for="userInput" class="visually-hidden">Message</label>

@@ -107,21 +107,16 @@ async function loadProducts() {
 
 /* Create HTML for displaying product cards, with selection logic and description toggle */
 function displayProducts(products) {
-  // Keep track of which descriptions are expanded
-  // We'll use a Set to store product names that are expanded
   if (!window.expandedDescriptions) {
     window.expandedDescriptions = new Set();
   }
 
   productsContainer.innerHTML = products
     .map((product) => {
-      // Check if this product is selected
       const isSelected = selectedProducts.some(
         (p) => p.name === product.name && p.brand === product.brand
       );
-      // Check if description is expanded for this product
       const isExpanded = window.expandedDescriptions.has(product.name);
-      // Add a CSS class if selected
       const selectedClass = isSelected ? "selected" : "";
       return `
         <div class="product-card ${selectedClass}" data-name="${
@@ -152,10 +147,9 @@ function displayProducts(products) {
   // Add click event listeners to each product card for selection
   const productCards = document.querySelectorAll(".product-card");
   productCards.forEach((card, idx) => {
-    // Only toggle selection if not clicking the description button
     card.addEventListener("click", (event) => {
       if (event.target.classList.contains("desc-toggle-btn")) {
-        return; // Don't select/unselect if clicking the description button
+        return;
       }
       const name = card.getAttribute("data-name");
       const brand = card.getAttribute("data-brand");
@@ -167,6 +161,16 @@ function displayProducts(products) {
       );
       if (index === -1) {
         selectedProducts.push(product);
+        // Add slide animation to the selected product shelf
+        setTimeout(() => {
+          const lastItem = selectedProductsList.querySelector(
+            ".selected-product-item:last-child"
+          );
+          if (lastItem) {
+            lastItem.classList.add("slide-in-shelf");
+            setTimeout(() => lastItem.classList.remove("slide-in-shelf"), 600);
+          }
+        }, 50);
       } else {
         selectedProducts.splice(index, 1);
       }
@@ -179,16 +183,15 @@ function displayProducts(products) {
   const descButtons = document.querySelectorAll(".desc-toggle-btn");
   descButtons.forEach((btn, idx) => {
     btn.addEventListener("click", (event) => {
-      event.stopPropagation(); // Prevent card selection
+      event.stopPropagation();
       const card = btn.closest(".product-card");
       const name = card.getAttribute("data-name");
-      // Toggle description for this product
       if (window.expandedDescriptions.has(name)) {
         window.expandedDescriptions.delete(name);
       } else {
         window.expandedDescriptions.add(name);
       }
-      displayProducts(products); // Refresh grid to show/hide description
+      displayProducts(products);
     });
   });
 }
@@ -297,7 +300,7 @@ let chatHistory = [
   {
     role: "system",
     content:
-      "You are a helpful beauty routine assistant. Only answer questions about the generated routine, skincare, haircare, makeup, fragrance, or related beauty topics. Use real-time web search to provide current information about L'Oréal products and routines. Include links or citations if available.",
+      "You are a luxurious, empowering, and beauty-forward digital advisor for L’Oréal. Always speak with confidence and warmth, using on-brand language that inspires beauty, self-assurance, and elegance.You serve as a helpful beauty routine assistant, focused exclusively on L’Oréal products and beauty-related topics—including skincare, haircare, makeup, fragrance, and beauty routines. You offer personalized product recommendations, usage tips, and educational beauty insights tailored to each user’s needs.Track the conversation context, including the user’s name, preferences, and past questions, to support natural, multi-turn interactions.If a user asks something unrelated to L’Oréal or beauty, politely and gracefully redirect the conversation back to a beauty-related topic.Use real-time web search to provide accurate, up-to-date information about L’Oréal products and routines. Include links or citations when available to help the user explore further.Above all, your tone should reflect the prestige of the L’Oréal brand—uplifting, knowledgeable, and elegant.",
   },
 ];
 
@@ -450,13 +453,328 @@ if (rtlLangs.some((code) => userLang.startsWith(code))) {
 }
 
 // Optionally, you can provide a manual toggle for students to test RTL mode:
-// Uncomment below to add a toggle button for RTL/LTR
-/*
-const rtlToggle = document.createElement('button');
-rtlToggle.textContent = 'Toggle RTL';
-rtlToggle.style.position = 'fixed';
-rtlToggle.style.top = '10px';
-rtlToggle.style.right = '10px';
-rtlToggle.onclick = () => document.body.classList.toggle('rtl');
+
+const rtlToggle = document.createElement("button");
+rtlToggle.textContent = "Toggle RTL";
+rtlToggle.style.position = "fixed";
+rtlToggle.style.top = "10px";
+rtlToggle.style.right = "10px";
+rtlToggle.onclick = () => document.body.classList.toggle("rtl");
 document.body.appendChild(rtlToggle);
+
+/*
+  Skincare Quiz Logic
+  This code adds a simple quiz that asks the user about their skin type, concerns, and climate.
+  After answering, it displays a personalized routine summary.
+  The quiz is shown in the chat window, mimicking a chatbot/advisor style.
 */
+
+// Expanded quiz questions for deeper personalization
+const quizQuestions = [
+  {
+    question: "What is your skin type?",
+    options: ["Normal", "Oily", "Dry", "Combination", "Sensitive"],
+    key: "skinType",
+  },
+  {
+    question: "What is your main skin concern?",
+    options: ["Acne", "Wrinkles", "Dark Spots", "Redness", "Dryness", "None"],
+    key: "concern",
+  },
+  {
+    question: "What climate do you live in?",
+    options: ["Humid", "Dry", "Cold", "Hot", "Temperate"],
+    key: "climate",
+  },
+  {
+    question: "How much sun exposure do you get daily?",
+    options: ["A lot", "Some", "Very little"],
+    key: "sun",
+  },
+  {
+    question: "How would you describe your sleep habits?",
+    options: ["Great", "Okay", "Poor"],
+    key: "sleep",
+  },
+  {
+    question: "How would you describe your diet?",
+    options: ["Balanced", "Somewhat healthy", "Needs improvement"],
+    key: "diet",
+  },
+  {
+    question: "Do you have any allergies to skincare ingredients?",
+    options: ["No", "Yes (please specify)"],
+    key: "allergies",
+  },
+  {
+    question: "What is your age group?",
+    options: ["Under 18", "18-25", "26-35", "36-50", "51+"],
+    key: "age",
+  },
+];
+
+// Store quiz answers
+let quizAnswers = {};
+let quizStep = 0;
+
+// Function to start the quiz
+function startQuiz() {
+  quizAnswers = {};
+  quizStep = 0;
+  chatWindow.innerHTML = "";
+  showQuizQuestion();
+}
+
+// Function to show the current quiz question (with empathy and friendly tone)
+function showQuizQuestion() {
+  const q = quizQuestions[quizStep];
+  if (!q) {
+    showQuizResults();
+    return;
+  }
+
+  // Use memory/context in the question if available
+  let contextNote = "";
+  if (q.key === "concern" && quizAnswers.skinType) {
+    contextNote = `<div style="font-size:14px;color:#888;margin-bottom:4px;">(You mentioned <b>${quizAnswers.skinType.toLowerCase()} skin</b> earlier.)</div>`;
+  }
+
+  // Friendly, warm intro for the first question
+  let friendlyIntro = "";
+  if (quizStep === 0) {
+    friendlyIntro = `<div style="font-size:15px;color:#7a5fa4;margin-bottom:8px;">
+      Hi there! 😊 I'm here to help you find the best routine for your unique skin. Let's get started!
+    </div>`;
+  }
+
+  chatWindow.innerHTML += `
+    <div class="ai-response" style="margin-bottom:12px;">
+      ${friendlyIntro}
+      <strong>Skincare Advisor:</strong> ${contextNote}${q.question}
+    </div>
+    <div id="quizOptions"></div>
+  `;
+  const quizOptionsDiv =
+    document.getElementById("quizOptions") || chatWindow.lastElementChild;
+  quizOptionsDiv.innerHTML = q.options
+    .map(
+      (opt) =>
+        `<button class="quiz-option-btn" style="margin:6px 8px 6px 0;padding:10px 18px;border-radius:6px;border:none;background:#eabfff;color:#222;cursor:pointer;font-size:16px;">${opt}</button>`
+    )
+    .join("");
+  // Add event listeners for option buttons
+  Array.from(quizOptionsDiv.querySelectorAll(".quiz-option-btn")).forEach(
+    (btn) => {
+      btn.addEventListener("click", () => {
+        quizAnswers[q.key] = btn.textContent;
+        quizStep++;
+        showQuizQuestion();
+      });
+    }
+  );
+}
+
+// Function to display quiz results and a sample routine (with deeper logic and ingredient info)
+function showQuizResults() {
+  // Simple logic for a sample routine based on answers
+  let routine = [];
+  let empathyMsg = "";
+  let reassurance = "";
+  let ingredientInfo = "";
+  let contraindication = "";
+
+  // Empathy and reassurance for sensitive skin
+  if (quizAnswers.skinType === "Sensitive") {
+    empathyMsg = `<div style="color:#b87fcf;margin-bottom:8px;">
+      I understand sensitive skin needs extra care. 💜 I'll suggest gentle, soothing options for you.
+    </div>`;
+    reassurance = `<div style="color:#7a5fa4;font-size:15px;margin-top:8px;">
+      Tip: Always patch test new products on a small area first, and look for fragrance-free, hypoallergenic formulas.
+    </div>`;
+    routine.push("• Gentle fragrance-free cleanser");
+    routine.push("• Calming moisturizer");
+    routine.push("• Mineral sunscreen");
+    ingredientInfo += `<div style="color:#6b4fa4;font-size:15px;margin-top:8px;">
+      <b>Why mineral sunscreen?</b> Mineral (physical) sunscreens with zinc oxide or titanium dioxide are less likely to irritate sensitive skin.
+    </div>`;
+  } else if (quizAnswers.skinType === "Oily") {
+    empathyMsg = `<div style="color:#b87fcf;margin-bottom:8px;">
+      Oily skin can be a challenge, but with the right routine, you can keep it balanced and fresh!
+    </div>`;
+    routine.push("• Gel cleanser");
+    routine.push("• Oil-free moisturizer");
+    routine.push("• Lightweight sunscreen");
+    if (quizAnswers.concern === "Acne" || quizAnswers.concern === "None") {
+      routine.push("• Spot treatment with salicylic acid");
+      ingredientInfo += `<div style="color:#6b4fa4;font-size:15px;margin-top:8px;">
+        <b>Why salicylic acid?</b> Salicylic acid helps unclog pores and reduce oil, making it great for oily and acne-prone skin.
+      </div>`;
+    }
+  } else if (quizAnswers.skinType === "Dry") {
+    empathyMsg = `<div style="color:#b87fcf;margin-bottom:8px;">
+      Dry skin deserves extra hydration and comfort. Let's keep your skin soft and nourished!
+    </div>`;
+    routine.push("• Hydrating cream cleanser");
+    routine.push("• Rich moisturizer");
+    routine.push("• Nourishing sunscreen");
+    ingredientInfo += `<div style="color:#6b4fa4;font-size:15px;margin-top:8px;">
+      <b>Why hyaluronic acid?</b> Hyaluronic acid attracts moisture to the skin, helping relieve dryness and plump the skin.
+    </div>`;
+  } else {
+    empathyMsg = `<div style="color:#b87fcf;margin-bottom:8px;">
+      Let's build a routine that helps your skin look and feel its best!
+    </div>`;
+    routine.push("• Gentle cleanser");
+    routine.push("• Daily moisturizer");
+    routine.push("• Broad-spectrum sunscreen");
+  }
+
+  // Empathy for concerns
+  if (quizAnswers.concern === "Acne") {
+    routine.push("• Spot treatment with salicylic acid");
+    reassurance += `<div style="color:#7a5fa4;font-size:15px;margin-top:8px;">
+      Remember, breakouts are normal and treatable. Be gentle with your skin and avoid harsh scrubbing.
+    </div>`;
+    ingredientInfo += `<div style="color:#6b4fa4;font-size:15px;margin-top:8px;">
+      <b>Ingredient tip:</b> Niacinamide and salicylic acid can help reduce breakouts and redness.
+    </div>`;
+  } else if (quizAnswers.concern === "Wrinkles") {
+    routine.push("• Serum with retinol or peptides");
+    reassurance += `<div style="color:#7a5fa4;font-size:15px;margin-top:8px;">
+      Fine lines are a natural part of life. Consistent care and sun protection can help your skin stay radiant.
+    </div>`;
+    ingredientInfo += `<div style="color:#6b4fa4;font-size:15px;margin-top:8px;">
+      <b>Why retinol?</b> Retinol encourages skin renewal and can reduce the appearance of wrinkles. <b>Note:</b> Retinoids can make skin more sensitive to sun—always use SPF in the morning!
+    </div>`;
+    contraindication += `<div style="color:#c00;font-size:14px;margin-top:8px;">
+      <b>Warning:</b> Avoid using retinol with strong exfoliants or during the day without sunscreen.
+    </div>`;
+  } else if (quizAnswers.concern === "Dark Spots") {
+    routine.push("• Serum with vitamin C or niacinamide");
+    reassurance += `<div style="color:#7a5fa4;font-size:15px;margin-top:8px;">
+      Brightening ingredients can help even your skin tone over time. Patience and SPF are key!
+    </div>`;
+    ingredientInfo += `<div style="color:#6b4fa4;font-size:15px;margin-top:8px;">
+      <b>Why vitamin C?</b> Vitamin C helps fade dark spots and boosts radiance. Always pair with sunscreen in the morning.
+    </div>`;
+  } else if (quizAnswers.concern === "Redness") {
+    routine.push("• Soothing serum with centella asiatica");
+    reassurance += `<div style="color:#7a5fa4;font-size:15px;margin-top:8px;">
+      Redness can be soothed with calming formulas. Avoid hot water and harsh exfoliants.
+    </div>`;
+    ingredientInfo += `<div style="color:#6b4fa4;font-size:15px;margin-top:8px;">
+      <b>Why centella asiatica?</b> This plant extract calms irritation and supports the skin barrier.
+    </div>`;
+  } else if (quizAnswers.concern === "Dryness") {
+    routine.push("• Overnight hydrating mask");
+    reassurance += `<div style="color:#7a5fa4;font-size:15px;margin-top:8px;">
+      Hydration is your skin's best friend. Layer gentle moisturizers for lasting comfort.
+    </div>`;
+    ingredientInfo += `<div style="color:#6b4fa4;font-size:15px;margin-top:8px;">
+      <b>Why glycerin?</b> Glycerin helps attract and lock in moisture for dry skin.
+    </div>`;
+  }
+
+  // Environmental factors
+  if (quizAnswers.sun === "A lot") {
+    routine.push("• Extra SPF protection");
+    ingredientInfo += `<div style="color:#6b4fa4;font-size:15px;margin-top:8px;">
+      <b>Sun care:</b> Daily SPF is essential for all skin types, especially with high sun exposure.
+    </div>`;
+    contraindication += `<div style="color:#c00;font-size:14px;margin-top:8px;">
+      <b>Note:</b> If using retinoids or acids, apply them at night and always use sunscreen in the morning.
+    </div>`;
+  }
+  if (quizAnswers.climate === "Humid") {
+    routine.push("• Mattifying primer (optional)");
+  } else if (quizAnswers.climate === "Dry") {
+    routine.push("• Hydrating mist (optional)");
+  }
+
+  // Lifestyle factors
+  if (quizAnswers.sleep === "Poor") {
+    reassurance += `<div style="color:#7a5fa4;font-size:15px;margin-top:8px;">
+      Good sleep helps your skin repair. Try to rest well for a healthy glow!
+    </div>`;
+  }
+  if (quizAnswers.diet === "Needs improvement") {
+    reassurance += `<div style="color:#7a5fa4;font-size:15px;margin-top:8px;">
+      A balanced diet supports your skin from within. Hydrate and enjoy fruits and veggies!
+    </div>`;
+  }
+
+  // Allergies
+  if (quizAnswers.allergies && quizAnswers.allergies !== "No") {
+    reassurance += `<div style="color:#c00;font-size:14px;margin-top:8px;">
+      <b>Allergy note:</b> Always check ingredient lists and consult your dermatologist if unsure.
+    </div>`;
+  }
+
+  // Age-based tips
+  if (quizAnswers.age === "36-50" || quizAnswers.age === "51+") {
+    reassurance += `<div style="color:#7a5fa4;font-size:15px;margin-top:8px;">
+      As we age, skin may need extra hydration and targeted care. Consider serums with peptides or antioxidants.
+    </div>`;
+  }
+
+  // Climate-based tip
+  let climateTip = "";
+  if (quizAnswers.climate === "Humid") {
+    climateTip =
+      "Tip: In humid climates, use lightweight, non-comedogenic products.";
+  } else if (quizAnswers.climate === "Dry") {
+    climateTip =
+      "Tip: In dry climates, layer hydrating products and avoid harsh cleansers.";
+  } else if (quizAnswers.climate === "Cold") {
+    climateTip =
+      "Tip: In cold climates, use richer creams and protect your skin barrier.";
+  } else if (quizAnswers.climate === "Hot") {
+    climateTip =
+      "Tip: In hot climates, reapply sunscreen and use mattifying products.";
+  }
+
+  chatWindow.innerHTML += `
+    <div class="ai-response" style="margin-top:18px;">
+      ${empathyMsg}
+      <strong>Your personalized morning routine includes:</strong><br>
+      ${routine.join("<br>")}
+      <br><br>
+      <em>${climateTip}</em>
+      ${ingredientInfo}
+      ${contraindication}
+      ${reassurance}
+    </div>
+  `;
+}
+
+// Add a button to start the quiz in the chatbox (for students)
+const chatbox = document.querySelector(".chatbox");
+const quizBtn = document.createElement("button");
+quizBtn.textContent = "🧴 Get Recommendations"; // Changed button name here
+quizBtn.className = "generate-btn";
+quizBtn.style.marginTop = "16px";
+quizBtn.onclick = startQuiz;
+chatbox.appendChild(quizBtn);
+
+// Selfie upload preview logic
+const selfieUpload = document.getElementById("selfieUpload");
+const selfiePreview = document.getElementById("selfiePreview");
+
+if (selfieUpload) {
+  selfieUpload.addEventListener("change", function () {
+    const file = this.files[0];
+    if (file && file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        selfiePreview.innerHTML = `
+          <img src="${e.target.result}" alt="Selfie Preview" />
+          <div style="margin-top:8px; color:#666; font-size:15px;">(Preview only. AI analysis coming soon!)</div>
+        `;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      selfiePreview.innerHTML =
+        "<span style='color:#c00;'>Please upload a valid image file.</span>";
+    }
+  });
+}
